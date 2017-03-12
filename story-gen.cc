@@ -1,8 +1,10 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <map>
 #include <vector>
-
+#include "json11.hpp"
 /*
 Rule:
     name
@@ -69,14 +71,47 @@ struct Phrase{
     }
 };
 
-int main(){
+int main(int argc, char* argv[]){
 /*
 Parse:
 Load Json
 for each key
     for each element
     parse Phrase
+*/
+if(argc<2)
+    std::cout << "cmd line params: "<< argv[0] << " rule.json" << std::endl;
 
+auto rules_file = std::string(argv[1]);
+std::stringstream ss;
+{
+    std::ifstream t(rules_file);
+    ss << t.rdbuf();
+    t.close();
+}
+std::cout << ss.str() << std::endl;
+
+std::string err;
+auto rules_set_json = json11::Json::parse(ss.str(), err);
+if(!err.empty()){
+    std::cout << "error parsing json" << std::endl;
+}else{
+    std::map<std::string,Rule*> rule_set;
+    for(auto const& k : rules_set_json.object_items()){
+        std::cout << k.first << "\t";
+        if(rule_set.find(k.first)==rule_set.end()){
+            auto r = new Rule();
+            r->name_ = k.first;
+            for(auto const& v : k.second.array_items()){
+                Phrase ph;
+                ph.parse(v.string_value(),rule_set);
+                r->phrases_.push_back(ph);
+            }
+            rule_set[k.first] = r;
+        }
+    }
+}
+/*
 Production:
 find starting rule,
 randomly select a phrase
