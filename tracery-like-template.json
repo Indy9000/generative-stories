@@ -1,0 +1,17 @@
+{
+	"origin": ["Once upon a time, #story#", "After the war ended, #story#", "At the begining of the new world, #story#"],
+	"story": ["#hero# the #hero-job# #adventure#. #open-book#"],
+	"hero": ["Arjun", "Yuuma", "Darcy", "Mia", "Chiaki", "Izzi", "Azra", "Lina"],
+	"hero-job": ["#occupation#"],
+	"adventure": ["#adventure-how# adventure", "left #hero#'s home", "went to seek #hero#'s fortune"],
+	"adventure-how": ["set sail for", "set out for"],
+	"open-book": ["An old #occupation# told #hero# a story. 'Listen well' she said to #hero#, 'to this #strange# #tale#','#origin#'",
+		"#hero# went home.",
+		"#hero# found an ancient book and opened it. As #hero# read, the book told a #strange# #tale#: #origin#"
+	],
+	"occupation": ["#occ-adj# #occ#"],
+	"occ-adj": ["occult ", "space ", "professional ", "gentleman ", "erotic ", "time ", "cyber", "paleo", "techno", "super"],
+	"occ": ["wizard", "witch", "detective", "ballerina", "criminal", "pirate", "lumberjack", "spy", "doctor", "scientist", "captain", "priest"],
+	"strange": ["mysterious", "portentous", "enchanting", "strange", "eerie"],
+	"tale": ["story", "saga", "tale", "legend"]
+}
