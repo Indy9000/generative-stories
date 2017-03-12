@@ -1,0 +1,92 @@
+{
+	"origin": ["Once upon a time, #story#", "After the war ended, #story#", "At the begining of the new world, #story#"],
+	"story": ["#hero# the #hero-job# #adventure#. #open-book#"],
+	"hero": ["Arjun", "Yuuma", "Darcy", "Mia", "Chiaki", "Izzi", "Azra", "Lina"],
+	"hero-job": ["#occupation#"],
+	"adventure": ["#adventure-how# adventure", "left #hero#'s home", "went to seek #hero#'s fortune"],
+	"adventure-how": ["set sail for", "set out for"],
+	"open-book": ["An old #occupation# told #hero# a story. 'Listen well' she said to #hero#, 'to this #strange# #tale#','#origin#'",
+		"#hero# went home.",
+		"#hero# found an ancient book and opened it. As #hero# read, the book told a #strange# #tale#: #origin#"
+	],
+	"occupation": ["#occ-adj# #occ#"],
+	"occ-adj": ["occult ", "space ", "professional ", "gentleman ", "erotic ", "time ", "cyber", "paleo", "techno", "super"],
+	"occ": ["wizard", "witch", "detective", "ballerina", "criminal", "pirate", "lumberjack", "spy", "doctor", "scientist", "captain", "priest"],
+	"strange": ["mysterious", "portentous", "enchanting", "strange", "eerie"],
+	"tale": ["story", "saga", "tale", "legend"]
+}
+
+
+
+Rule:
+    name
+    [phrase]
+
+name: string
+phrase: string* Rule string*
+string: [a-zA-Z\-]
+[]: array
+
+struct Phrase;
+
+struct Rule{
+    std::string name_{""};
+    std::vector<Phrase> phrases_{""};
+};
+
+struct Node{
+    std::string words{""};
+    Rule * p_rule{nullptr};
+};
+
+struct Phrase{
+    std::vector<Node> nodes_;
+    
+    std::string parse_rule_name(const std::string& t, int & j){
+        int i=j;
+        bool found{false};
+        while(j < static_cast<int>(t.size())){
+            if('#' == t[j]) { found = true; break; }
+            ++j;            
+        }
+        if(!found){
+            throw std::runtime_error(std::string("illformed rulename, no delimiting #"));
+        }
+        return t.substr(i, (j-1)-i-1);
+    }
+
+    void parse(const std::string& text, std::map<Rule*>& rules){
+        int i=0,j=0;
+        while(j < static_cast<int>(text.size())){
+            if(text[j]=='#'){ //found a rule, save text so far to a node, save rule on a new node
+                Node n;
+                n.words_ = text.substr(i, (j-1)-i-1);
+                nodes_.push_back(n);
+
+                Node n1;
+                auto rule_name = parse_rule_name(text,j);
+                if(rules.find(rule_name)==rules.end()){ //create this rule if not found yet
+                    n1.p_rule = new Rule();
+                    n1.p_rule.name_ = rule_name;
+                    rules[rule_name] = n1.p_rule;
+                }else{
+                    n1.p_rule = rules[rule_name];
+                }
+                nodes_.push_back(n1);
+                i = j;
+            }
+        }
+        Node n;
+        n.words_ = text.substr(i, (j-1)-i-1);
+        nodes_.push_back(n);
+    }
+};
+
+Load Json
+for each key
+    for each element
+    parse Phrase
+
+find starting rule,
+randomly select a phrase
+unfold phrase recursively
