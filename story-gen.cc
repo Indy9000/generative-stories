@@ -24,17 +24,19 @@ string: [a-zA-Z\-]
 struct Phrase;
 
 struct Rule{
-    std::string name_{""};
-    std::vector<Phrase> phrases_{};
+    std::string Name{""};
+    std::vector<Phrase> Phrases{};
+    Rule(const std::string& name):Name(name){
+    }
 };
 
 struct Node{
-    std::string words_{""};
-    Rule * p_rule_{nullptr};
+    std::string Words{""};
+    std::shared_ptr<Rule> pRule;
 };
 
 struct Phrase{
-    std::vector<Node> nodes_;
+    std::vector<Node> Nodes;
     
     std::string parse_rule_name(const std::string& t, int & j){
         //parse the rule name from 1st char after # to the next #
@@ -50,7 +52,7 @@ struct Phrase{
         return t.substr(i, j-i-1);
     }
 
-    void parse(const std::string& text, std::map<std::string, Rule*>& rules){
+    void parse(const std::string& text, std::map<std::string, std::shared_ptr<Rule>>& rules){
         int i=0,j=0;
         while(j < text.size()){
           while('#'!= text[j] && j< text.size()){
@@ -59,9 +61,9 @@ struct Phrase{
           
           {//insert the text node
               Node text_node;
-              text_node.words_ = text.substr(i,j-i);
-              std::cout << "normal-text=["<< text_node.words_ <<"]\n";
-              nodes_.push_back(text_node);
+              text_node.Words = text.substr(i,j-i);
+              std::cout << "normal-text=["<< text_node.Words <<"]\n";
+              Nodes.push_back(text_node);
           }
 
           bool found = (text[j]=='#');
@@ -70,13 +72,12 @@ struct Phrase{
             std::cout << "rule_name=[" <<rule_name <<"]\n"; 
             Node rule_node;
             if(rules.find(rule_name)==rules.end()){ //not found in the rules dictionary
-                rule_node.p_rule_ = new Rule();
-                rule_node.p_rule_->name_ = rule_name;
-                rules[rule_name] = rule_node.p_rule_;
+                rule_node.pRule = std::make_shared<Rule>(rule_name);
+                rules[rule_name] = rule_node.pRule;
             }else{//found in the rules dictionary
-                rule_node.p_rule_ = rules[rule_name];
+                rule_node.pRule = rules[rule_name];
             }
-            nodes_.push_back(rule_node);
+            Nodes.push_back(rule_node);
           }
           
           i = j;
@@ -84,94 +85,92 @@ struct Phrase{
     }
 };
 
-void unfold_random_phrase(Rule* p_rule){
-    if (p_rule->phrases_.size()==0){
+void unfold_random_phrase(std::shared_ptr<Rule> p_rule){
+    if (p_rule->Phrases.size()==0){
         std::cout << "no phrases. returning;";
         return;
     }
     //-- select random phrase
     std::default_random_engine e1(rrr());
-    std::uniform_int_distribution<int> uniform_dist(0, p_rule->phrases_.size()-1);
+    std::uniform_int_distribution<int> uniform_dist(0, p_rule->Phrases.size()-1);
     int phi = uniform_dist(e1);
     // std::cout << "\nUnfolding phrase = "<<phi<< "\n";
     //-- unfold that phrase
-    for(const auto& n : p_rule->phrases_[phi].nodes_){
-        if(n.p_rule_==nullptr){
-            std::cout << n.words_;
+    for(const auto& n : p_rule->Phrases[phi].Nodes){
+        if(n.pRule==nullptr){
+            std::cout << n.Words;
         }else{
-            // std::cout << "\nUnfolding rule = "<<n.p_rule_->name_ << "\n";
-            unfold_random_phrase(n.p_rule_);
+            // std::cout << "\nUnfolding rule = "<<n.pRule->Name << "\n";
+            unfold_random_phrase(n.pRule);
         }
     }
 }
 
 int main(int argc, char* argv[]){
-/*
-Parse:
-Load Json
-for each key
-    for each element
-    parse Phrase
-*/
-// if(argc<2)
-//     std::cout << "cmd line params: "<< argv[0] << " rule.json" << std::endl;
+    /*
+    Parse:
+    Load Json
+    for each key
+        for each element
+        parse Phrase
+    */
+    // if(argc<2)
+    //     std::cout << "cmd line params: "<< argv[0] << " rule.json" << std::endl;
 
-// auto rules_file = std::string(argv[1]);
-auto rules_file = std::string("./tracery-like-template.json");
-std::stringstream ss;
-{
-    std::ifstream t(rules_file);
-    ss << t.rdbuf();
-    t.close();
-}
-std::cout << ss.str() << std::endl;
-
-//parsed content would be stored here
-std::map<std::string,Rule*> rule_set;
-
-std::string err;
-auto rules_set_json = json11::Json::parse(ss.str(), err);
-if(!err.empty()){
-    std::cout << "error parsing json" << std::endl;
-}else{
-    for(auto const& k : rules_set_json.object_items()){
-        std::cout << "rule-name-json="<<k.first << "\n";
-        Rule * r=nullptr;
-        if(rule_set.find(k.first)==rule_set.end()){
-            r = new Rule();
-            r->name_ = k.first;
-            rule_set[k.first] = r;
-        }else{
-            r = rule_set[k.first];            
-        }
-        //-- set the phrasess
-        for(auto const& v : k.second.array_items()){
-            Phrase ph;
-            std::cout << v.string_value() << std::endl;
-            ph.parse(v.string_value(),rule_set);
-            r->phrases_.push_back(ph);
-        }
-        std::cout << "****** setting new rule:["<<k.first <<"]\n";
-        std::cout << "****** phrase_ count="<< r->phrases_.size()<<"\n";
+    // auto rules_file = std::string(argv[1]);
+    auto rules_file = std::string("./tracery-like-template.json");
+    std::stringstream ss;
+    {
+        std::ifstream t(rules_file);
+        ss << t.rdbuf();
+        t.close();
     }
-    std::cout << "\n";
-}
-/*
-Production:
-find starting rule,
-randomly select a phrase
-unfold phrase recursively
-*/    
-std::cout << "-----------------------------------------------------------\n";
-std::cout << "rule-set key count="<< rule_set.size()<<"\n";
+    std::cout << ss.str() << std::endl;
 
-if(rule_set.find("origin")!=rule_set.end()){
-    std::cout << "found starting rule\n";
-    const auto& rule = rule_set["origin"];
-    std::cout << "ptr=" << rule << "\n";
+    //parsed content would be stored here
+    std::map<std::string,std::shared_ptr<Rule>> rule_set;
 
-    unfold_random_phrase(rule);
-}
+    std::string err;
+    auto rules_set_json = json11::Json::parse(ss.str(), err);
+    if(!err.empty()){
+        std::cout << "error parsing json" << std::endl;
+    }else{
+        for(auto const& k : rules_set_json.object_items()){
+            std::cout << "rule-name-json="<<k.first << "\n";
+            std::shared_ptr<Rule> r = nullptr;
+            if(rule_set.find(k.first)==rule_set.end()){
+                r = std::make_shared<Rule>(k.first);
+                rule_set[k.first] = r;
+            }else{
+                r = rule_set[k.first];            
+            }
+            //-- set the phrasess
+            for(auto const& v : k.second.array_items()){
+                Phrase ph;
+                // std::cout << v.string_value() << std::endl;
+                ph.parse(v.string_value(),rule_set);
+                r->Phrases.push_back(ph);
+            }
+            std::cout << "****** setting new rule:["<<k.first <<"]\n";
+            std::cout << "****** phrase_ count="<< r->Phrases.size()<<"\n";
+        }
+        std::cout << "\n";
+    }
 
+    /*
+    Production:
+    find starting rule,
+    randomly select a phrase
+    unfold phrase recursively
+    */    
+    std::cout << "-----------------------------------------------------------\n";
+    std::cout << "rule-set key count="<< rule_set.size()<<"\n";
 
+    if(rule_set.find("origin")!=rule_set.end()){
+        // std::cout << "found starting rule\n";
+        const auto& rule = rule_set["origin"];
+        // std::cout << "ptr=" << rule << "\n";
+
+        unfold_random_phrase(rule);
+    }
 }
